@@ -6,18 +6,18 @@ import (
 )
 
 func TestNewExcel(t *testing.T) {
-	ex := NewExcel("./test", "template.xlsx")
+	ex := NewExcel("./example", "template.xlsx")
 	if err := ex.Save(); err != nil {
 		t.Error(err)
 	}
-	_, err := os.Stat("./test/template.xlsx")
+	_, err := os.Stat("./example/template.xlsx")
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestNewExcelFromTemplate(t *testing.T) {
-	ex, err := NewExcelFromTemplate("./test/template.xlsx", "./test", "exprot.xlsx")
+	ex, err := NewExcelFromTemplate("./example/template.xlsx", "./example", "export.xlsx")
 	if err != nil {
 		t.Error(err)
 		return
@@ -34,11 +34,11 @@ func TestNewExcelFromTemplate(t *testing.T) {
 
 type demoData struct {
 	Name string `json:"name" ex:"colHeader:名字"`
-	Age  string `json:"age" ex:"colHeader:年龄"`
+	Age  uint   `json:"age" ex:"colHeader:年龄"`
 }
 
 func TestExcel_NewSheet(t *testing.T) {
-	ex := NewExcel("./test", "template.xlsx")
+	ex := NewExcel("./example", "template.xlsx")
 	defer func() {
 		if err := ex.Save(); err != nil {
 			t.Error(err)

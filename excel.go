@@ -8,16 +8,13 @@ import (
 	"path/filepath"
 )
 
-//	type IExcelBuilder interface {
-//		FileName() string
-//		SaveDir() string
-//		SetFileName(name string)
-//		SetSaveDir(dir string)
-//		NewSheet(sheetName string, baseDataType any, opts ...Option) *Sheet
-//		Run() error
-//	}
-//
-// var _ IExcelBuilder = new(Excel)
+type Excel struct {
+	fileDir  string
+	fileName string
+	sheets   []*Sheet
+	file     *excelize.File
+}
+
 func NewExcel(fileDir, filename string) *Excel {
 	return &Excel{fileName: filename, fileDir: fileDir, file: excelize.NewFile()}
 }
@@ -26,20 +23,47 @@ func NewExcelFromTemplate(templatePath string, saveDir, saveName string) (*Excel
 	if err != nil {
 		return nil, err
 	}
-	return &Excel{fileName: saveName, fileDir: saveDir, file: f}, nil
-}
-
-type Excel struct {
-	fileDir  string
-	fileName string
-	//sheets   []*Sheet
-	file *excelize.File
+	ex := &Excel{fileName: saveName, fileDir: saveDir, file: f}
+	for _, stName := range f.GetSheetList() {
+		id, err := f.GetSheetIndex(stName)
+		if err != nil {
+			return ex, err
+		}
+		ex.sheets = append(ex.sheets, &Sheet{
+			file:        f,
+			sheetId:     id,
+			titleStyle:  DefaultTitleStyle,
+			dataStyle:   DefaultDataStyle,
+			minColWidth: DefaultColMinWidth,
+			maxColWidth: DefaultColMaxWidth,
+		})
+	}
+	return ex, nil
 }
 
 func (e *Excel) NewSheet(sheetName string, baseDataType any, opts ...Option) *Sheet {
-	return NewSheet(e.file, sheetName, baseDataType, opts...)
+	st := newSheet(e.file, sheetName, baseDataType, opts...)
+	e.sheets = append(e.sheets, st)
+	return st
 }
 
+func (e *Excel) GetSheetByName(sheetName string) *Sheet {
+	for _, v := range e.sheets {
+		if v.SheetName() == sheetName {
+			return v
+		}
+	}
+	return nil
+}
+
+func (e *Excel) GetSheetById(sheetId int) *Sheet {
+	for _, v := range e.sheets {
+		if v.sheetId == sheetId {
+			return v
+		}
+	}
+	return nil
+}
 func (e *Excel) SetFileName(fileName string) *Excel {
 	e.fileName = fileName
 	return e
@@ -62,14 +86,28 @@ func (e *Excel) File() *excelize.File {
 }
 
 func (e *Excel) Save() (err error) {
-	//检测并生成目录
+	//generate directories
 	if err = os.MkdirAll(e.fileDir, os.ModePerm); err != nil {
 		return
 	}
-	//保存
+	//delete Sheet 1
+	var hasSheet1 bool
+	for _, v := range e.sheets {
+		if v.SheetName() == "Sheet1" {
+			hasSheet1 = true
+			break
+		}
+	}
+	if !hasSheet1 {
+		_ = e.file.DeleteSheet("Sheet1")
+	}
+	//save file
 	path := filepath.ToSlash(filepath.Join(e.fileDir, e.fileName))
 	if err = e.file.SaveAs(path); err != nil {
 		log.Println(fmt.Sprintf("save file error :%v", err))
 	}
 	return
+}
+func (e *Excel) NewStyle(newStyle *excelize.Style) (int, error) {
+	return e.file.NewStyle(newStyle)
 }

@@ -6,33 +6,14 @@ import (
 	"reflect"
 )
 
-// 获取excel的列索引
-var columnIndices = []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
-
-// 抽象工作簿
-//type ISheetBuilder interface {
-//	Data() any           //数据，支持struct、[]struct、[]*struct三种类型
-//	SheetName() string   //表名称
-//	Headers() []Header   //表头名称，没有则跳过插入表头的步骤
-//	FieldSort() []string //指定字段的排列顺序，默认按照结构体中的顺序排列(表头与数据没有关联，使用这个指定字段插入顺序)
-//	SetData(any) error
-//	SetSheetName(string)
-//	SetHeaders(...Header)
-//	SetFieldSort([]string)
-//	FillData(file *excelize.File) error
-//}
-
-type DataType interface {
-	~struct{} | ~*struct{} | ~[]struct{} | ~[]*struct{}
-}
-
-type Option func(s *Sheet)
-
-func NewSheet(file *excelize.File, sheetName string, baseDataType any, opts ...Option) *Sheet {
+func newSheet(file *excelize.File, sheetName string, baseDataType any, opts ...Option) *Sheet {
 	var a = &Sheet{file: file, baseDataType: baseDataType}
 	a.Title = NewTitle(a)
 	a.sheetId, _ = file.NewSheet(sheetName)
-	a.defaultStyle = NewDefaultTitleStyle
+	a.titleStyle = DefaultTitleStyle
+	a.dataStyle = DefaultDataStyle
+	a.minColWidth = DefaultColMinWidth
+	a.maxColWidth = DefaultColMaxWidth
 	for _, opt := range opts {
 		opt(a)
 	}
@@ -45,10 +26,13 @@ type Sheet struct {
 	file          *excelize.File
 	sheetId       int
 	rowNum        int
-	defaultStyle  func() *excelize.Style
+	titleStyle    func() *excelize.Style
+	dataStyle     func() *excelize.Style
 	data          any
-	baseDataType  any //reflect.Type //the base type of the data, it used to search appropriate writer(IDataWriter.Supported)
+	baseDataType  any //the base type of the data, it used to search appropriate writer(IDataWriter.Supported)
 	firstEmptyRow int
+	minColWidth   float64
+	maxColWidth   float64
 }
 
 func (s *Sheet) SetSheetName(sheetName string) {
@@ -60,15 +44,20 @@ func (s *Sheet) FillData(data any) error {
 	if s.file == nil {
 		return errors.New("file object is Empty!")
 	}
+	s.firstEmptyRow = GetFirstEmptyRowIndex(s.file, s.SheetName())
+	s.rowNum = s.firstEmptyRow
 	dataType := reflect.TypeOf(data)
-	if dataType.Kind() == reflect.Slice || dataType.Kind() == reflect.Array {
-		s.rowNum += dataType.Len()
-	} else {
+	switch dataType.Kind() {
+	case reflect.Slice, reflect.Array:
+		value := reflect.ValueOf(data)
+		s.rowNum += value.Len()
+	default:
 		s.rowNum += 1
 	}
-	s.firstEmptyRow = GetFirstEmptyRowIndex(s.file, s.SheetName())
-	writers.WriteData(s)
-	return nil
+	return writers.WriteData(s)
+}
+func (s *Sheet) SetDataType(t any) {
+	s.baseDataType = t
 }
 
 func (s *Sheet) SetFieldSort(fieldSort []string) {
@@ -81,18 +70,39 @@ func (s *Sheet) SheetName() string {
 func (s *Sheet) Data() any {
 	return s.data
 }
-func (s *Sheet) DefaultStyle() func() *excelize.Style {
-	return s.defaultStyle
+func (s *Sheet) TitleStyle() func() *excelize.Style {
+	return s.titleStyle
+}
+func (s *Sheet) DataStyle() func() *excelize.Style {
+	return s.dataStyle
+}
+func (s *Sheet) SetTitleStyle(style func() *excelize.Style) {
+	s.titleStyle = style
+}
+func (s *Sheet) SetDataStyle(style func() *excelize.Style) {
+	s.dataStyle = style
 }
 
-func (s *Sheet) SetDefaultStyle(defaultStyle func() *excelize.Style) {
-	s.defaultStyle = defaultStyle
+func (s *Sheet) MinColWidth() float64 {
+	return s.minColWidth
 }
 
-// 数据将按照这些字段的顺序写入表中
+func (s *Sheet) SetMinColWidth(minColWidth float64) {
+	s.minColWidth = minColWidth
+}
+
+func (s *Sheet) SetMaxColWidth(maxColWidth float64) {
+	s.maxColWidth = maxColWidth
+}
+
+func (s *Sheet) MaxColWidth() float64 {
+	return s.maxColWidth
+}
+
+// The data is written to the table in the order of these fields
 func (s *Sheet) Fields(recalculate ...bool) []string {
-	if (s.fieldSort == nil && s.data != nil) || (len(recalculate) == 1 && recalculate[0] == true) {
-		writers.FieldSort(s.baseDataType)
+	if (s.fieldSort == nil && s.baseDataType != nil) || (len(recalculate) == 1 && recalculate[0] == true) {
+		return writers.FieldSort(s)
 	}
 	return s.fieldSort
 }
