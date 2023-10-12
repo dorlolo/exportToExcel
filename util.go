@@ -18,6 +18,8 @@ func Float[T float64 | float32](value string) T {
 	return T(v)
 }
 
+const minCloWidth float64 = 6
+
 // 自动设置单元格宽度
 func AutoResetCellWidth(sheetObj *Sheet, setLimitWidth ...float64) error {
 	// 获取最大字符宽度
@@ -33,7 +35,7 @@ func AutoResetCellWidth(sheetObj *Sheet, setLimitWidth ...float64) error {
 		limitWidth = setLimitWidth[0]
 	}
 	for col := 1; col <= columnLen; col++ {
-		var maxWidth float64
+		var maxWidth = minCloWidth
 		for row := 0; row < rowLen; row++ {
 			value, _ := sheetObj.file.GetCellValue(sheetObj.SheetName(), GetCellCoord(row+1, col))
 			width := float64(len(value))
