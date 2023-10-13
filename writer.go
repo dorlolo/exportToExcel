@@ -16,17 +16,17 @@ var writers writerList
 
 type writerList []IDataWriter
 
-func (w writerList) FieldSort(baseDataType any) []string {
+func (w writerList) FieldSort(sheetObj *Sheet) []string {
 	for _, dw := range w {
-		if dw.Supported(baseDataType) {
-			return dw.FieldSort(baseDataType)
+		if dw.Supported(sheetObj.data) {
+			return dw.FieldSort(sheetObj.baseDataType)
 		}
 	}
 	return nil
 }
 func (w writerList) WriteData(sheetObj *Sheet) error {
 	for _, dw := range w {
-		if dw.Supported(sheetObj.baseDataType) {
+		if dw.Supported(sheetObj.data) {
 			return dw.WriteData(sheetObj)
 		}
 	}
@@ -56,14 +56,17 @@ type sliceWriter struct {
 }
 
 func (s sliceWriter) Supported(data any) bool {
-	switch data.(type) {
-	case []struct{}:
-		return true
-	case []*struct{}:
-		return true
-	default:
-		return false
+	dataType := reflect.TypeOf(data)
+	if dataType.Kind() == reflect.Slice || dataType.Kind() == reflect.Array {
+		elementType := dataType.Elem()
+		if elementType.Kind() == reflect.Ptr {
+			elementType = elementType.Elem()
+		}
+		if elementType.Kind() == reflect.Struct {
+			return true
+		}
 	}
+	return false
 }
 
 // , SheetData reflect.Value, SheetDataType reflect.Type, firstRow int
@@ -71,8 +74,8 @@ func (s sliceWriter) WriteData(sheetObj *Sheet) error {
 	var cellNameList = sheetObj.Fields()
 	var refValue = reflect.ValueOf(sheetObj.Data())
 	var refType = reflect.TypeOf(sheetObj.baseDataType)
-	var rowLen = refValue.Len()
-	for i := 0; i < rowLen; i++ {
+	var columnLen = refType.NumField()
+	for i := 0; i < columnLen; i++ {
 		var dataMap = s.dataToMap(refValue.Index(i), refType)
 		for column, v := range cellNameList {
 			var axis = GetCellCoord(i+sheetObj.firstEmptyRow+1, column+1)
@@ -87,7 +90,15 @@ func (s sliceWriter) WriteData(sheetObj *Sheet) error {
 	if errs != nil {
 		return errs
 	}
-	if err := sheetObj.file.SetCellStyle(sheetObj.SheetName(), GetCellCoord(sheetObj.firstEmptyRow+1, 1), GetCellCoord(rowLen+1, len(sheetObj.Title.titles)), dataStyleID); err != nil {
+	maxCol := columnLen
+	titleLen := len(sheetObj.Title.titles)
+	if titleLen > maxCol {
+		maxCol = titleLen
+	}
+	if maxCol == 0 {
+		maxCol = 1
+	}
+	if err := sheetObj.file.SetCellStyle(sheetObj.SheetName(), GetCellCoord(sheetObj.firstEmptyRow+1, 1), GetCellCoord(sheetObj.rowNum, maxCol), dataStyleID); err != nil {
 		return err
 	}
 	//设置默认列宽
@@ -103,16 +114,15 @@ func (s sliceWriter) FieldSort(baseDataType any) []string {
 
 func (s sliceWriter) dataToMap(sheet reflect.Value, sheetType reflect.Type) (dataMap map[string]any) {
 	dataMap = make(map[string]any)
-	t := sheetType.Elem()
 	//指针类型结构体拿真实的对象
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
+	if sheetType.Kind() == reflect.Ptr {
+		sheetType = sheetType.Elem()
 		sheet = sheet.Elem()
 	}
-	for i := 0; i < t.NumField(); i++ {
-		var tag = t.Field(i).Tag.Get("json")
+	for i := 0; i < sheetType.NumField(); i++ {
+		var tag = sheetType.Field(i).Tag.Get("json")
 		if tag != "" {
-			dataMap[t.Field(i).Tag.Get("json")] = sheet.Field(i).Interface()
+			dataMap[sheetType.Field(i).Tag.Get("json")] = sheet.Field(i).Interface()
 		}
 	}
 	return dataMap

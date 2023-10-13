@@ -2,6 +2,7 @@ package exportToExcel
 
 import (
 	"github.com/xuri/excelize/v2"
+	"reflect"
 )
 
 func NewTitle(sheet *Sheet) Title {
@@ -15,56 +16,63 @@ type Title struct {
 	FontScaleFactor float64
 	BaseFontSize    float64
 	MaxFontSize     float64
+	occupiedRow     []int
 }
 
-func (t *Title) Add(title *TitleItem) (err error) {
-	defer func() {
-		if err == nil {
-			t.titles = append(t.titles, title)
+func (t *Title) Gen(titles ...*TitleItem) (err error) {
+	for _, title := range titles {
+		//insert row
+		if len(t.occupiedRow) > 0 {
+			for thisRow := title.InitRow; thisRow < title.MergeRowTo; thisRow++ {
+				var sameRowExisted bool
+				for _, occRow := range t.occupiedRow {
+					if occRow == thisRow {
+						sameRowExisted = true
+						break
+					}
+				}
+				if !sameRowExisted {
+					t.sheet.rowNum++
+					_ = t.sheet.file.InsertRows(t.sheet.SheetName(), title.InitRow, 1)
+					t.occupiedRow = append(t.occupiedRow, thisRow)
+				}
+			}
+		} else if t.sheet.rowNum > title.InitRow {
+			_ = t.sheet.file.InsertRows(t.sheet.SheetName(), title.InitRow, title.MergeRowTo-title.MergeColTo+1)
 		}
-	}()
-	//insert row
-	if len(t.titles) > 0 {
-		var sameRowExisted bool
-		for _, t := range t.titles {
-			if t.Row == title.Row {
-				sameRowExisted = true
+		if title.InitCol == 0 {
+			title.InitCol = 1
+		}
+		if title.InitRow == 0 {
+			title.InitRow = 1
+		}
+		var (
+			cellL = GetCellCoord(title.InitRow, title.InitCol)
+			cellR = GetCellCoord(title.MergeRowTo, title.MergeColTo)
+		)
+		//Merge cells
+		if title.MergeRowTo != 0 && title.MergeColTo != 0 {
+			if err = t.sheet.file.MergeCell(t.sheet.SheetName(), cellL, cellR); err != nil {
+				return err
 			}
 		}
-		if !sameRowExisted {
-			_ = t.sheet.file.InsertRows(t.sheet.SheetName(), title.Row, 1)
-		}
-	} else if t.sheet.rowNum > title.Row {
-		_ = t.sheet.file.InsertRows(t.sheet.SheetName(), title.Row, 1)
-	}
-	if title.MergeColFrom == 0 {
-		title.MergeColFrom = 1
-	}
-	var (
-		cellL = GetCellCoord(title.Row, title.MergeColFrom)
-		cellR = GetCellCoord(title.Row, title.MergeColTo)
-	)
-	//Merge cells
-	if title.MergeColFrom != 0 && title.MergeColTo != 0 {
-		if err = t.sheet.file.MergeCell(t.sheet.SheetName(), cellL, cellR); err != nil {
+		//set text
+		if err = t.sheet.file.SetCellStr(t.sheet.SheetName(), cellL, title.Text); err != nil {
 			return err
 		}
-	}
-	//set text
-	if err = t.sheet.file.SetCellStr(t.sheet.SheetName(), cellL, title.Text); err != nil {
-		return err
-	}
-	//set Style
-	if title.style == nil {
-		title.style = t.sheet.defaultStyle()
-		title.style.Font.Size = t.setFontSize(title.Level)
-	}
-	headerStyleID, errs := t.sheet.file.NewStyle(title.style)
-	if errs != nil {
-		return
-	}
-	if err = t.sheet.file.SetCellStyle(t.sheet.SheetName(), cellL, cellR, headerStyleID); err != nil {
-		return
+		//set Style
+		if title.style == nil {
+			title.style = t.sheet.defaultStyle()
+			title.style.Font.Size = t.setFontSize(title.Level)
+		}
+		headerStyleID, errs := t.sheet.file.NewStyle(title.style)
+		if errs != nil {
+			return
+		}
+		if err = t.sheet.file.SetCellStyle(t.sheet.SheetName(), cellL, cellR, headerStyleID); err != nil {
+			return
+		}
+		t.titles = append(t.titles, title)
 	}
 	return nil
 }
@@ -79,13 +87,38 @@ func (t *Title) setFontSize(titleLevel int) float64 {
 	return fontSize
 }
 
+// NewTitleItem
+func (t *Title) NewTitleItem(level int, text string, row, column int, style ...*excelize.Style) *TitleItem {
+	tm := &TitleItem{
+		Level:   level,
+		Text:    text,
+		InitRow: row,
+		InitCol: column,
+		sheet:   t.sheet,
+	}
+	if style != nil {
+		tm.style = style[0]
+	}
+	t.titles = append(t.titles, tm)
+	tm.id = len(t.titles) - 1
+	return tm
+}
+
 type TitleItem struct {
-	Level        int
-	Text         string
-	Row          int //所在行
-	MergeColFrom int
-	MergeColTo   int
-	style        *excelize.Style
+	id         int
+	Level      int
+	Text       string
+	InitRow    int //所在行
+	InitCol    int //default is 1
+	MergeColTo int
+	MergeRowTo int
+	style      *excelize.Style
+	sheet      *Sheet
+}
+
+// GetId
+func (t *TitleItem) GetId() int {
+	return t.id
 }
 
 // SetStyle
@@ -94,8 +127,49 @@ func (t *TitleItem) SetStyle(style *excelize.Style) *TitleItem {
 	t.style = style
 	return t
 }
-func (t *TitleItem) NeedMergeAllDataCol(dataColLen int) *TitleItem {
-	t.MergeColFrom = 1
-	t.MergeColTo = dataColLen
+
+// SetMergeColNum
+func (t *TitleItem) SetMergeColNum(num int) *TitleItem {
+	t.MergeColTo += num
+	return t
+}
+
+// SetMergeRowNum
+func (t *TitleItem) SetMergeRowNum(num int) *TitleItem {
+	t.MergeRowTo += num
+	return t
+}
+
+// SetMergeColTo
+func (t *TitleItem) SetMergeColTo(colTo int) *TitleItem {
+	t.MergeColTo = colTo
+	return t
+}
+
+// SetMergeRowTo
+func (t *TitleItem) SetMergeRowTo(colTo int) *TitleItem {
+	t.MergeColTo = colTo
+	return t
+}
+
+// SetMergeRowTo
+func (t *TitleItem) SetMergeTo(row, col int) *TitleItem {
+	t.MergeRowTo = row
+	t.MergeColTo = col
+	return t
+}
+
+// SetFullMerge
+func (t *TitleItem) SetFullMerge(colNum ...int) *TitleItem {
+	t.InitCol = 1
+	if colNum != nil {
+		t.MergeColTo = colNum[0]
+	} else {
+		baseType := reflect.TypeOf(t.sheet.baseDataType)
+		t.MergeColTo = baseType.NumField()
+		if colNum != nil && colNum[0] > t.MergeColTo {
+			t.MergeColTo = colNum[0]
+		}
+	}
 	return t
 }

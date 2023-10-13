@@ -102,15 +102,14 @@ func DataToMapByJsonTag(sheet reflect.Value, sheetType reflect.Type) (dataMap ma
 }
 func GetJsonFieldList(structObj reflect.Type) (list []string, err error) {
 	//根据data字段排序
-	t := structObj.Elem()
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-		if t.Kind() != reflect.Struct {
+	if structObj.Kind() == reflect.Ptr {
+		structObj = structObj.Elem()
+		if structObj.Kind() != reflect.Struct {
 			return []string{}, errors.New("GetJsonFieldList: structObj must struct{} or *struct{}!")
 		}
 	}
-	for i := 0; i < t.NumField(); i++ {
-		var tag = t.Field(i).Tag.Get("json")
+	for i := 0; i < structObj.NumField(); i++ {
+		var tag = structObj.Field(i).Tag.Get("json")
 		if tag != "" {
 			list = append(list, tag)
 		}

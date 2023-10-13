@@ -47,7 +47,7 @@ type Sheet struct {
 	rowNum        int
 	defaultStyle  func() *excelize.Style
 	data          any
-	baseDataType  any //reflect.Type //the base type of the data, it used to search appropriate writer(IDataWriter.Supported)
+	baseDataType  any //the base type of the data, it used to search appropriate writer(IDataWriter.Supported)
 	firstEmptyRow int
 }
 
@@ -61,14 +61,15 @@ func (s *Sheet) FillData(data any) error {
 		return errors.New("file object is Empty!")
 	}
 	dataType := reflect.TypeOf(data)
-	if dataType.Kind() == reflect.Slice || dataType.Kind() == reflect.Array {
-		s.rowNum += dataType.Len()
-	} else {
+	switch dataType.Kind() {
+	case reflect.Slice, reflect.Array:
+		value := reflect.ValueOf(data)
+		s.rowNum += value.Len()
+	default:
 		s.rowNum += 1
 	}
 	s.firstEmptyRow = GetFirstEmptyRowIndex(s.file, s.SheetName())
-	writers.WriteData(s)
-	return nil
+	return writers.WriteData(s)
 }
 
 func (s *Sheet) SetFieldSort(fieldSort []string) {
@@ -92,7 +93,7 @@ func (s *Sheet) SetDefaultStyle(defaultStyle func() *excelize.Style) {
 // 数据将按照这些字段的顺序写入表中
 func (s *Sheet) Fields(recalculate ...bool) []string {
 	if (s.fieldSort == nil && s.data != nil) || (len(recalculate) == 1 && recalculate[0] == true) {
-		writers.FieldSort(s.baseDataType)
+		return writers.FieldSort(s)
 	}
 	return s.fieldSort
 }

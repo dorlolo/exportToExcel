@@ -34,7 +34,7 @@ func TestNewExcelFromTemplate(t *testing.T) {
 
 type demoData struct {
 	Name string `json:"name" ex:"colHeader:名字"`
-	Age  string `json:"age" ex:"colHeader:年龄"`
+	Age  uint   `json:"age" ex:"colHeader:年龄"`
 }
 
 func TestExcel_NewSheet(t *testing.T) {
