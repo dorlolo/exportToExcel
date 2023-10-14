@@ -6,8 +6,6 @@ import (
 	"reflect"
 )
 
-type Option func(s *Sheet)
-
 func newSheet(file *excelize.File, sheetName string, baseDataType any, opts ...Option) *Sheet {
 	var a = &Sheet{file: file, baseDataType: baseDataType}
 	a.Title = NewTitle(a)
