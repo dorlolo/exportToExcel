@@ -16,6 +16,7 @@ type Title struct {
 	BaseFontSize    float64
 	MaxFontSize     float64
 	occupiedRow     []int
+	colNum          int
 }
 
 // Gen
@@ -69,6 +70,10 @@ func (t *Title) Gen(titles ...*TitleItem) (err error) {
 		}
 		if err = t.sheet.file.SetCellStyle(t.sheet.SheetName(), cellL, cellR, headerStyleID); err != nil {
 			return
+		}
+		colNum := title.MergeColTo - title.InitCol + 1
+		if t.colNum < colNum {
+			t.colNum = colNum
 		}
 		t.titles = append(t.titles, title)
 	}

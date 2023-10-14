@@ -140,14 +140,15 @@ type structWriter struct {
 }
 
 func (s structWriter) Supported(data any) bool {
-	switch data.(type) {
-	case struct{}:
-		return true
-	case *struct{}:
-		return true
-	default:
-		return false
+	dataType := reflect.TypeOf(data)
+	elementType := dataType.Elem()
+	if elementType.Kind() == reflect.Ptr {
+		elementType = elementType.Elem()
 	}
+	if elementType.Kind() == reflect.Struct {
+		return true
+	}
+	return false
 }
 
 func (s structWriter) WriteData(sheetObj *Sheet) error {
@@ -162,13 +163,17 @@ func (s structWriter) WriteData(sheetObj *Sheet) error {
 			return err
 		}
 	}
-	//设置数据格式
+	//register data style
 	dataStyleID, err := sheetObj.file.NewStyle(DefaultDataStyle())
 	if err != nil {
 		return err
 	}
-	//todo sheetObj.Title.titles 这里应该不对
-	if err = sheetObj.file.SetCellStyle(sheetObj.SheetName(), GetCellCoord(sheetObj.firstEmptyRow, 1), GetCellCoord(sheetObj.firstEmptyRow+1, len(sheetObj.Title.titles)), dataStyleID); err != nil {
+	// gets the maximum number of columns
+	colLen := len(sheetObj.Fields())
+	if sheetObj.Title.colNum > colLen {
+		colLen = sheetObj.Title.colNum
+	}
+	if err = sheetObj.file.SetCellStyle(sheetObj.SheetName(), GetCellCoord(sheetObj.firstEmptyRow, 1), GetCellCoord(sheetObj.firstEmptyRow+1, colLen), dataStyleID); err != nil {
 		return err
 	}
 	//设置默认列宽
