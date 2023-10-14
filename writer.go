@@ -17,9 +17,17 @@ var writers writerList
 type writerList []IDataWriter
 
 func (w writerList) FieldSort(sheetObj *Sheet) []string {
-	for _, dw := range w {
-		if dw.Supported(sheetObj.data) {
-			return dw.FieldSort(sheetObj.baseDataType)
+	if sheetObj.data == nil {
+		for _, dw := range w {
+			if fs := dw.FieldSort(sheetObj.baseDataType); fs != nil {
+				return fs
+			}
+		}
+	} else {
+		for _, dw := range w {
+			if dw.Supported(sheetObj.data) {
+				return dw.FieldSort(sheetObj.baseDataType)
+			}
 		}
 	}
 	return nil
@@ -86,7 +94,7 @@ func (s sliceWriter) WriteData(sheetObj *Sheet) error {
 		}
 	}
 	//设置数据格式
-	dataStyleID, errs := sheetObj.file.NewStyle(NewDefaultDataStyle())
+	dataStyleID, errs := sheetObj.file.NewStyle(DefaultDataStyle())
 	if errs != nil {
 		return errs
 	}
@@ -155,7 +163,7 @@ func (s structWriter) WriteData(sheetObj *Sheet) error {
 		}
 	}
 	//设置数据格式
-	dataStyleID, err := sheetObj.file.NewStyle(NewDefaultDataStyle())
+	dataStyleID, err := sheetObj.file.NewStyle(DefaultDataStyle())
 	if err != nil {
 		return err
 	}

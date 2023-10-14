@@ -5,18 +5,10 @@ import (
 	"fmt"
 	"github.com/xuri/excelize/v2"
 	"reflect"
-	"strconv"
 )
 
-func Int[T int | uint | uint8 | uint32 | uint64 | int32 | int64](value string) T {
-	v, _ := strconv.Atoi(value)
-	return T(v)
-}
-
-func Float[T float64 | float32](value string) T {
-	v, _ := strconv.ParseFloat(value, 64)
-	return T(v)
-}
+// 获取excel的列索引
+var columnIndices = []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
 
 const minCloWidth float64 = 6
 
@@ -62,6 +54,12 @@ func AutoResetCellWidth(sheetObj *Sheet, setLimitWidth ...float64) error {
 
 // 行列坐标值转换为excel的坐标。注意row和columnCount的初始值都是1
 func GetCellCoord(row int, columnCount int) string {
+	if row == 0 {
+		row = 1
+	}
+	if columnCount == 0 {
+		columnCount = 1
+	}
 	var column = GetColumnIndex(columnCount)
 	return fmt.Sprintf("%s%d", column, row)
 }
