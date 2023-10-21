@@ -2,7 +2,7 @@
 [English](./README.md) | 中文版
 
 ## 功能描述
-这个Golang模块是专为快速开发数据导出功能设计的。它在 [excelize](github.com/xuri/excelize/v2) 的基础上，封装了一些常用的功能，使数据导出变得更加简单。
+这个Golang模块是专为快速导出数据而设计的。它在 [excelize](github.com/xuri/excelize/v2) 的基础上，封装了一些常用的功能，使数据导出变得更加简单。
 
 ## 如何使用?
 ###  下载和引用
@@ -24,7 +24,8 @@ import (
 	"github.com/dorlolo/exportToExcel"
 )
 
-// 首先为需要用到的字段创建一个结构体,并指定json标签。默认情况下，将会按照定义的字段顺序导出到表中。
+// 首先需要创建一个工作表的数据模型，并为每个字段指定json标签。
+// 默认情况下，将会按照结构体中的字段顺序导出到表中。
 type DemoBaseDataTypeA struct {
 	Name   string  `json:"name"`
 	Age    int     `json:"age"`
@@ -58,11 +59,12 @@ func main() {
 		return
 	}
 	// 填充数据
+	// 数据默认会按照结构体中的字段顺序填充到表中。
+	// st1.Title.Gen和st1.FillData在使用上不存在先后顺序。
 	var data1 = []DemoBaseDataTypeA{
 		{"Mr.Zhang", 16, 180},
 		{"Mrs.Li", 18, 220},
 	}
-	// 填充数据，数据默认会按照结构体中的顺序填充到表中
 	err = st1.FillData(data1)
 	if err != nil {
 		fmt.Println("fill data1 err:", err)
@@ -96,7 +98,7 @@ if st == nil {
     t.Error("can not find sheet:Sheet1")
     return
 }
-// 设置表数据的基本类型，这一步很重要。
+// 设置表数据的基本类型，这一步很重要!
 st.SetDataType(DemoBaseDataTypeA{})
 // 填充数据,数据会自动从空行处添加，无需担心会覆盖表头
 var data1 = []DemoBaseDataTypeA{
@@ -120,5 +122,5 @@ st.SetFieldSort("age","name","height")
 #### 自定义样式
 
 #### 自定义写入器
-如果你需要自定义写入器，使用这个接口[IDataWriter](./writer.go)实现。
-然后使用`RegisterDataWriter`方法注册到模块中。填充数据时将优先使用手动注册进来的写入器。
+如果你需要自定义写入器，请使用这个接口[IDataWriter](./writer.go)实现。 
+然后使用`RegisterDataWriter`方法注册到模块中。填充数据时将优先匹配手动注册进来的写入器。
