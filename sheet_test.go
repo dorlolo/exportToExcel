@@ -6,7 +6,7 @@ import (
 
 func TestNewSheet(t *testing.T) {
 	var err error
-	ex := NewExcel("./test", "sheet_test.xlsx")
+	ex := NewExcel("./example", "sheet_test.xlsx")
 	defer func() {
 		if err == nil {
 			if err = ex.Save(); err != nil {
@@ -14,7 +14,7 @@ func TestNewSheet(t *testing.T) {
 			}
 		}
 	}()
-	st := NewSheet(ex.file, "filldata", demoData{})
+	st := ex.NewSheet("filldata", demoData{})
 	data := []demoData{
 		{
 			Name: "small ming",

@@ -84,20 +84,21 @@ func GetFirstEmptyRowIndex(ex *excelize.File, sheetName string) (index int) {
 
 func DataToMapByJsonTag(sheet reflect.Value, sheetType reflect.Type) (dataMap map[string]any) {
 	dataMap = make(map[string]any)
-	t := sheetType.Elem()
-	//指针类型结构体拿真实的对象
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
+	if sheet.Kind() == reflect.Ptr {
 		sheet = sheet.Elem()
 	}
-	for i := 0; i < t.NumField(); i++ {
-		var tag = t.Field(i).Tag.Get("json")
+	if sheetType.Kind() == reflect.Ptr {
+		sheetType = sheetType.Elem()
+	}
+	for i := 0; i < sheetType.NumField(); i++ {
+		var tag = sheetType.Field(i).Tag.Get("json")
 		if tag != "" {
-			dataMap[t.Field(i).Tag.Get("json")] = sheet.Field(i).Interface()
+			dataMap[sheetType.Field(i).Tag.Get("json")] = sheet.Field(i).Interface()
 		}
 	}
 	return dataMap
 }
+
 func GetJsonFieldList(structObj reflect.Type) (list []string, err error) {
 	//根据data字段排序
 	if structObj.Kind() == reflect.Ptr {

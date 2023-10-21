@@ -5,7 +5,7 @@ import (
 )
 
 func NewTitle(sheet *Sheet) Title {
-	return Title{sheet: sheet, FontScaleFactor: 2, BaseFontSize: 12, MaxFontSize: 22, MaxLevel: 5}
+	return Title{sheet: sheet, FontScaleFactor: 2, BaseFontSize: 12, MaxFontSize: 20, MaxLevel: 5}
 }
 
 type Title struct {
@@ -23,7 +23,7 @@ type Title struct {
 // generate a TitleItem
 func (t *Title) Gen(titles ...*TitleItem) (err error) {
 	for _, title := range titles {
-		//insert row
+		//insert empty row
 		if len(t.occupiedRow) > 0 {
 			for thisRow := title.InitRow; thisRow < title.MergeRowTo; thisRow++ {
 				var sameRowExisted bool

@@ -83,7 +83,7 @@ func (s sliceWriter) WriteData(sheetObj *Sheet) error {
 	var refValue = reflect.ValueOf(sheetObj.Data())
 	var refType = reflect.TypeOf(sheetObj.baseDataType)
 	var columnLen = refType.NumField()
-	for i := 0; i < columnLen; i++ {
+	for i := 0; i < columnLen-1; i++ {
 		var dataMap = s.dataToMap(refValue.Index(i), refType)
 		for column, v := range cellNameList {
 			var axis = GetCellCoord(i+sheetObj.firstEmptyRow+1, column+1)
@@ -93,13 +93,13 @@ func (s sliceWriter) WriteData(sheetObj *Sheet) error {
 			}
 		}
 	}
-	//设置数据格式
+	//set sheet style
 	dataStyleID, errs := sheetObj.file.NewStyle(DefaultDataStyle())
 	if errs != nil {
 		return errs
 	}
 	maxCol := columnLen
-	titleLen := len(sheetObj.Title.titles)
+	titleLen := sheetObj.Title.colNum
 	if titleLen > maxCol {
 		maxCol = titleLen
 	}
@@ -121,18 +121,7 @@ func (s sliceWriter) FieldSort(baseDataType any) []string {
 }
 
 func (s sliceWriter) dataToMap(sheet reflect.Value, sheetType reflect.Type) (dataMap map[string]any) {
-	dataMap = make(map[string]any)
-	//指针类型结构体拿真实的对象
-	if sheetType.Kind() == reflect.Ptr {
-		sheetType = sheetType.Elem()
-		sheet = sheet.Elem()
-	}
-	for i := 0; i < sheetType.NumField(); i++ {
-		var tag = sheetType.Field(i).Tag.Get("json")
-		if tag != "" {
-			dataMap[sheetType.Field(i).Tag.Get("json")] = sheet.Field(i).Interface()
-		}
-	}
+	dataMap = DataToMapByJsonTag(sheet, sheetType)
 	return dataMap
 }
 
@@ -141,11 +130,10 @@ type structWriter struct {
 
 func (s structWriter) Supported(data any) bool {
 	dataType := reflect.TypeOf(data)
-	elementType := dataType.Elem()
-	if elementType.Kind() == reflect.Ptr {
-		elementType = elementType.Elem()
+	if dataType.Kind() == reflect.Ptr {
+		dataType = dataType.Elem()
 	}
-	if elementType.Kind() == reflect.Struct {
+	if dataType.Kind() == reflect.Struct {
 		return true
 	}
 	return false

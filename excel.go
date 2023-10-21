@@ -8,16 +8,13 @@ import (
 	"path/filepath"
 )
 
-//	type IExcelBuilder interface {
-//		FileName() string
-//		SaveDir() string
-//		SetFileName(name string)
-//		SetSaveDir(dir string)
-//		NewSheet(sheetName string, baseDataType any, opts ...Option) *Sheet
-//		Run() error
-//	}
-//
-// var _ IExcelBuilder = new(Excel)
+type Excel struct {
+	fileDir  string
+	fileName string
+	sheets   []*Sheet
+	file     *excelize.File
+}
+
 func NewExcel(fileDir, filename string) *Excel {
 	return &Excel{fileName: filename, fileDir: fileDir, file: excelize.NewFile()}
 }
@@ -26,15 +23,18 @@ func NewExcelFromTemplate(templatePath string, saveDir, saveName string) (*Excel
 	if err != nil {
 		return nil, err
 	}
-	//todo loading SheetName to Excel.sheets property
-	return &Excel{fileName: saveName, fileDir: saveDir, file: f}, nil
-}
-
-type Excel struct {
-	fileDir  string
-	fileName string
-	sheets   []*Sheet
-	file     *excelize.File
+	ex := &Excel{fileName: saveName, fileDir: saveDir, file: f}
+	for _, stName := range f.GetSheetList() {
+		id, err := f.GetSheetIndex(stName)
+		if err != nil {
+			return ex, err
+		}
+		ex.sheets = append(ex.sheets, &Sheet{
+			file:    f,
+			sheetId: id,
+		})
+	}
+	return ex, nil
 }
 
 func (e *Excel) NewSheet(sheetName string, baseDataType any, opts ...Option) *Sheet {
@@ -43,6 +43,23 @@ func (e *Excel) NewSheet(sheetName string, baseDataType any, opts ...Option) *Sh
 	return st
 }
 
+func (e *Excel) GetSheetByName(sheetName string) *Sheet {
+	for _, v := range e.sheets {
+		if v.SheetName() == sheetName {
+			return v
+		}
+	}
+	return nil
+}
+
+func (e *Excel) GetSheetById(sheetId int) *Sheet {
+	for _, v := range e.sheets {
+		if v.sheetId == sheetId {
+			return v
+		}
+	}
+	return nil
+}
 func (e *Excel) SetFileName(fileName string) *Excel {
 	e.fileName = fileName
 	return e

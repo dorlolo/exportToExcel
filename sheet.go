@@ -38,6 +38,8 @@ func (s *Sheet) FillData(data any) error {
 	if s.file == nil {
 		return errors.New("file object is Empty!")
 	}
+	s.firstEmptyRow = GetFirstEmptyRowIndex(s.file, s.SheetName())
+	s.rowNum = s.firstEmptyRow
 	dataType := reflect.TypeOf(data)
 	switch dataType.Kind() {
 	case reflect.Slice, reflect.Array:
@@ -46,8 +48,10 @@ func (s *Sheet) FillData(data any) error {
 	default:
 		s.rowNum += 1
 	}
-	s.firstEmptyRow = GetFirstEmptyRowIndex(s.file, s.SheetName())
 	return writers.WriteData(s)
+}
+func (s *Sheet) SetDataType(t any) {
+	s.baseDataType = t
 }
 
 func (s *Sheet) SetFieldSort(fieldSort []string) {
