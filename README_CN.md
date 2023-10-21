@@ -45,7 +45,8 @@ func main() {
 		}
 	}()
 	// 生成一个工作表对象
-	// 需要传入基础数据类型,最终st1会支持这些数据类型: DemoBaseDataTypeA{} , *DemoBaseDataTypeA{} , []DemoBaseDataTypeA{} 和 []*DemoBaseDataTypeA{}
+	// 需要传入基础数据类型,最终st1会支持这些数据类型: 
+	//    DemoBaseDataTypeA{} , *DemoBaseDataTypeA{} , []DemoBaseDataTypeA{} 和 []*DemoBaseDataTypeA{}
 	st1 := ex.NewSheet("st1", DemoBaseDataTypeA{})
     // 设置表头，如果不需要你可以忽略它
 	err = st1.Title.Gen(
