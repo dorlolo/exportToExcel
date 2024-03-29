@@ -83,13 +83,16 @@ func (s sliceWriter) WriteData(sheetObj *Sheet) error {
 	var refValue = reflect.ValueOf(sheetObj.Data())
 	var refType = reflect.TypeOf(sheetObj.baseDataType)
 	var columnLen = refType.NumField()
-	for i := 0; i < columnLen-1; i++ {
-		var dataMap = s.dataToMap(refValue.Index(i), refType)
-		for column, v := range cellNameList {
-			var axis = GetCellCoord(i+sheetObj.firstEmptyRow+1, column+1)
-			err := sheetObj.file.SetCellValue(sheetObj.SheetName(), axis, dataMap[v])
-			if err != nil {
-				return err
+	dataRowLen := refValue.Len()
+	for rowIndex := 0; rowIndex < dataRowLen; rowIndex++ {
+		var dataMap = s.dataToMap(refValue.Index(rowIndex), refType)
+		for i := 0; i < columnLen-1; i++ {
+			for column, v := range cellNameList {
+				var axis = GetCellCoord(sheetObj.firstEmptyRow+rowIndex+1, column+1)
+				err := sheetObj.file.SetCellValue(sheetObj.SheetName(), axis, dataMap[v])
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

@@ -36,8 +36,13 @@ func TestNewExcelAndFillData(t *testing.T) {
 		return
 	}
 	var data1_1 = []DemoBaseDataTypeA{
-		{"Mr.Zhang", 16, 180},
-		{"Mrs.Li", 18, 220},
+		{"Mr.A", 1, 11},
+		{"Mrs.B", 2, 22},
+		{"Mrs.C", 3, 33},
+		{"Mrs.D", 4, 55},
+		{"Mrs.E", 5, 55},
+		{"Mrs.F", 6, 66},
+		{"Mrs.G", 7, 77},
 	}
 	err = st1.FillData(data1_1)
 	if err != nil {
@@ -45,8 +50,8 @@ func TestNewExcelAndFillData(t *testing.T) {
 		return
 	}
 	var data1_2 = []*DemoBaseDataTypeA{
-		{"Mr.Zhang", 16, 180},
-		{"Mrs.Li", 18, 220},
+		{"Mr.H", 8, 88},
+		{"Mrs.I", 9, 99},
 	}
 	err = st1.FillData(data1_2)
 	if err != nil {
