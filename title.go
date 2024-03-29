@@ -61,7 +61,7 @@ func (t *Title) Gen(titles ...*TitleItem) (err error) {
 		}
 		//set Style
 		if title.style == nil {
-			title.style = t.sheet.defaultStyle()
+			title.style = t.sheet.titleStyle()
 			title.style.Font.Size = t.setFontSize(title.Level)
 		}
 		headerStyleID, errs := t.sheet.file.NewStyle(title.style)

@@ -74,6 +74,7 @@ func TestNewExcelAndFillData(t *testing.T) {
 		return
 	}
 }
+
 func TestReadExcelFromTemplateFile(t *testing.T) {
 	ex, err := exportToExcel.NewExcelFromTemplate("./template.xlsx", ".", "newfile.xlsx")
 	if err != nil {

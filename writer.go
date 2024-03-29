@@ -8,7 +8,6 @@ package exportToExcel
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 )
 
@@ -97,7 +96,7 @@ func (s sliceWriter) WriteData(sheetObj *Sheet) error {
 		}
 	}
 	//set sheet style
-	dataStyleID, errs := sheetObj.file.NewStyle(DefaultDataStyle())
+	dataStyleID, errs := sheetObj.file.NewStyle(sheetObj.dataStyle())
 	if errs != nil {
 		return errs
 	}
@@ -150,12 +149,11 @@ func (s structWriter) WriteData(sheetObj *Sheet) error {
 		var axis = GetCellCoord(sheetObj.firstEmptyRow+1, column+1)
 		err := sheetObj.file.SetCellValue(sheetObj.SheetName(), axis, dataMap[v])
 		if err != nil {
-			fmt.Println(err.Error())
 			return err
 		}
 	}
 	//register data style
-	dataStyleID, err := sheetObj.file.NewStyle(DefaultDataStyle())
+	dataStyleID, err := sheetObj.file.NewStyle(sheetObj.dataStyle())
 	if err != nil {
 		return err
 	}
@@ -167,8 +165,7 @@ func (s structWriter) WriteData(sheetObj *Sheet) error {
 	if err = sheetObj.file.SetCellStyle(sheetObj.SheetName(), GetCellCoord(sheetObj.firstEmptyRow, 1), GetCellCoord(sheetObj.firstEmptyRow+1, colLen), dataStyleID); err != nil {
 		return err
 	}
-	//设置默认列宽
-	//exc.ex.SetColWidth(sheetObj.SheetName(), GetColumnIndex(1), GetColumnIndex(len(sheetObj.SheetHeaders())), 12.0)
+	//Set the default column width
 	return AutoResetCellWidth(sheetObj)
 }
 

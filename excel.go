@@ -30,8 +30,12 @@ func NewExcelFromTemplate(templatePath string, saveDir, saveName string) (*Excel
 			return ex, err
 		}
 		ex.sheets = append(ex.sheets, &Sheet{
-			file:    f,
-			sheetId: id,
+			file:        f,
+			sheetId:     id,
+			titleStyle:  DefaultTitleStyle,
+			dataStyle:   DefaultDataStyle,
+			minColWidth: DefaultColMinWidth,
+			maxColWidth: DefaultColMaxWidth,
 		})
 	}
 	return ex, nil
@@ -97,7 +101,7 @@ func (e *Excel) Save() (err error) {
 	if !hasSheet1 {
 		_ = e.file.DeleteSheet("Sheet1")
 	}
-	//保存
+	//save file
 	path := filepath.ToSlash(filepath.Join(e.fileDir, e.fileName))
 	if err = e.file.SaveAs(path); err != nil {
 		log.Println(fmt.Sprintf("save file error :%v", err))
