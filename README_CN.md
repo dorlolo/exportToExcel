@@ -166,5 +166,9 @@ st2:=ex.NewSheet("sheet2", ExDataTYpe{},exportToExcel.OptionSetColWidth(-1,200))
 ex := exportToExcel.NewExcel(".", "aa.xlsx")
 exFile:=ex.File()
 //使用exFile来实现更多功能
-//...
+//比如为单元格添加下拉菜单
+vd := excelize.NewDataValidation(true)
+vd.SetSqref("D2:D100")
+_ = vd.SetDropList([]string{"红", "绿", "黄"})
+_ = exFile.AddDataValidation("Sheet1", vd)
 ```
