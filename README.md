@@ -189,5 +189,9 @@ If the above functions don't meet your needs, you can get the `*excelize.File` o
 ex := exportToExcel.NewExcel(".", "aa.xlsx")
 exFile:=ex.File()
 // Use exFile for more features  
-//...
+// For example, add a dropdown menu to cells
+vd := excelize.NewDataValidation(true)
+vd.SetSqref("D2:D100")
+_ = vd.SetDropList([]string{"red", "green", "yellow"})
+_ = exFile.AddDataValidation("Sheet1", vd)
 ```
