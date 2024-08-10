@@ -14,6 +14,7 @@ func DefaultTitleStyle() *excelize.Style {
 		Alignment: &excelize.Alignment{
 			Horizontal: "center",
 		},
+		Protection: &excelize.Protection{},
 	}
 }
 
@@ -28,5 +29,6 @@ func DefaultDataStyle() *excelize.Style {
 		Alignment: &excelize.Alignment{
 			Horizontal: "left",
 		},
+		Protection: &excelize.Protection{},
 	}
 }

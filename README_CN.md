@@ -7,7 +7,7 @@
 它具备以下特点：
    1. 支持使用文件作为模板；
    2. 支持设置动态表头、合并单元格、表头样式；
-   3. 支持解析多种数据类型；
+   3. 支持多种数据类型自动填充；
    4. 具备默认的单元格样式；
    5. 根据数据长度自适应列宽。
 ## 如何使用?
@@ -161,14 +161,35 @@ st2:=ex.NewSheet("sheet2", ExDataTYpe{},exportToExcel.OptionSetColWidth(-1,200))
 如果你需要自定义写入器，请使用这个接口[IDataWriter](./writer.go)实现。,然后使用`RegisterDataWriter`方法注册到模块中。填充数据时将优先匹配手动注册进来的写入器。
 
 #### 使用excelize.File对象来支持更多功能
-如果上面的功能还没满足你的开发需求，可以拿到`excelize.File`对象来至此更多的功能。
+如果上面的功能还没满足你的开发需求，可以获取原生的`excelize.File`对象来使用更多的功能。
 ```go
 ex := exportToExcel.NewExcel(".", "aa.xlsx")
 exFile:=ex.File()
-//使用exFile来实现更多功能
-//比如为单元格添加下拉菜单
+//使用exFile对象来实现更多功能
+//...
+```
+下面是一些例子
+- 添加下拉菜单
+```go
 vd := excelize.NewDataValidation(true)
 vd.SetSqref("D2:D100")
 _ = vd.SetDropList([]string{"红", "绿", "黄"})
 _ = exFile.AddDataValidation("Sheet1", vd)
+```
+- 锁定单元格
+```go
+//配置一个锁定单元格样式
+lockCellStyle := exportToExcel.DefaultDataStyle()
+lockCellStyle.Protection.Locked = true
+lockCellStyleId, _ := exf.NewStyle(lockCellStyle)
+//锁定Sheet1表中的A1至C2单元格
+_ = exFile.SetCellStyle("Sheet1", "A1", "C2", lockCellStyleId)
+//Sheet1设置保护工作表，使锁定功能生效
+err = exFile.ProtectSheet("Sheet1", &excelize.SheetProtectionOptions{
+	//可以设置密码
+    //Password:            "123456",
+    //AlgorithmName:       "SHA-512",
+    SelectLockedCells:   true,
+    SelectUnlockedCells: true,
+}
 ```

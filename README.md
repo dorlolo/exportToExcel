@@ -189,9 +189,30 @@ If the above functions don't meet your needs, you can get the `*excelize.File` o
 ex := exportToExcel.NewExcel(".", "aa.xlsx")
 exFile:=ex.File()
 // Use exFile for more features  
-// For example, add a dropdown menu to cells
+//...
+```
+There are some examples below:
+-  Add dropdown menu
+```go
 vd := excelize.NewDataValidation(true)
 vd.SetSqref("D2:D100")
 _ = vd.SetDropList([]string{"red", "green", "yellow"})
 _ = exFile.AddDataValidation("Sheet1", vd)
+```
+- Lock cells
+```go
+//Configure locked cell style
+lockCellStyle := exportToExcel.DefaultDataStyle()
+lockCellStyle.Protection.Locked = true
+lockCellStyleId, _ := exf.NewStyle(lockCellStyle)
+//Lock cells A1-C2 in Sheet 1
+_ = exFile.SetCellStyle("Sheet1", "A1", "C2", lockCellStyleId)
+//Set the protection sheet to make the lock function take effect
+err = exFile.ProtectSheet("Sheet1", &excelize.SheetProtectionOptions{
+	// Set password
+    //Password:            "123456",
+    //AlgorithmName:       "SHA-512",
+    SelectLockedCells:   true,
+    SelectUnlockedCells: true,
+}
 ```
