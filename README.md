@@ -151,7 +151,7 @@ ex := exportToExcel.NewExcel("./", "aa.xlsx")
 st:=ex.NewSheet("sheet1", ExDataTYpe{}, exportToExcel.OptionSetTitleStyle(func() *excelize.Style {
     // Easier to modify based on default style
     newStyle := exportToExcel.DefaultDataStyle()
-   newStyle.Border[0].Color = "read"
+   newStyle.Border[0].Color = "red"
     return newStyle
 }))
 ```
