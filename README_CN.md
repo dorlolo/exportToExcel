@@ -193,3 +193,27 @@ err = exFile.ProtectSheet("Sheet1", &excelize.SheetProtectionOptions{
     SelectUnlockedCells: true,
 }
 ```
+
+### 启用流式写入
+
+针对大数据量导出，可以开启“流式写入”以降低内存占用。启用后将通过 `excelize.StreamWriter` 逐行写入。
+
+```go
+ex := exportToExcel.NewExcel(".", "stream.xlsx")
+st := ex.NewSheet("sheet1", DemoBaseDataTypeA{}, exportToExcel.OptionEnableStreamWriter(true))
+// 可选：生成表头
+_ = st.Title.Gen(st.Title.NewTitleItem(4, "users", 1, 1).SetFullHorizontalMerge())
+
+// 填充数据（结构体切片或单结构体）
+data := []DemoBaseDataTypeA{{"Alice", 30, 180}, {"Bob", 25, 175}}
+if err := st.FillData(data); err != nil {
+    panic(err)
+}
+if err := ex.Save(); err != nil {
+    panic(err)
+}
+```
+
+说明：
+- API 用法保持不变，仅写入路径切换为流式方式。
+- 写入完成后仍会应用数据样式与列宽自适应。

@@ -216,3 +216,27 @@ err = exFile.ProtectSheet("Sheet1", &excelize.SheetProtectionOptions{
     SelectUnlockedCells: true,
 }
 ```
+
+### Enable Streaming Write
+
+For large datasets, you can enable streaming write to reduce memory usage. When enabled, rows are appended via `excelize.StreamWriter`.
+
+```go
+ex := exportToExcel.NewExcel(".", "stream.xlsx")
+st := ex.NewSheet("sheet1", DemoBaseDataTypeA{}, exportToExcel.OptionEnableStreamWriter(true))
+// Optional: generate title
+_ = st.Title.Gen(st.Title.NewTitleItem(4, "users", 1, 1).SetFullHorizontalMerge())
+
+// Fill data (struct slice or single struct)
+data := []DemoBaseDataTypeA{{"Alice", 30, 180}, {"Bob", 25, 175}}
+if err := st.FillData(data); err != nil {
+    panic(err)
+}
+if err := ex.Save(); err != nil {
+    panic(err)
+}
+```
+
+Notes:
+- API remains the same; only the write path changes to streaming.
+- Data styles and auto column width are still applied after writing.
