@@ -7,17 +7,18 @@ import (
 )
 
 func newSheet(file *excelize.File, sheetName string, baseDataType any, opts ...Option) *Sheet {
-	var a = &Sheet{file: file, baseDataType: baseDataType}
-	a.Title = NewTitle(a)
-	a.sheetId, _ = file.NewSheet(sheetName)
-	a.titleStyle = DefaultTitleStyle
-	a.dataStyle = DefaultDataStyle
-	a.minColWidth = DefaultColMinWidth
-	a.maxColWidth = DefaultColMaxWidth
-	for _, opt := range opts {
-		opt(a)
-	}
-	return a
+    var a = &Sheet{file: file, baseDataType: baseDataType}
+    a.Title = NewTitle(a)
+    a.sheetId, _ = file.NewSheet(sheetName)
+    a.titleStyle = DefaultTitleStyle
+    a.dataStyle = DefaultDataStyle
+    a.minColWidth = DefaultColMinWidth
+    a.maxColWidth = DefaultColMaxWidth
+    a.autoResetColWidth = true
+    for _, opt := range opts {
+        opt(a)
+    }
+    return a
 }
 
 type Sheet struct {
@@ -33,6 +34,7 @@ type Sheet struct {
     firstEmptyRow int
     minColWidth   float64
     maxColWidth   float64
+    autoResetColWidth bool
     // streaming write support
     useStream     bool
     stream        *excelize.StreamWriter

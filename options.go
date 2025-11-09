@@ -23,6 +23,14 @@ func OptionSetColWidth(min, max float64) Option {
     }
 }
 
+// OptionAutoResetColWidth enables or disables auto column width calculation.
+// When disabled, fixed width will be applied using the sheet's minColWidth.
+func OptionAutoResetColWidth(enable bool) Option {
+    return func(s *Sheet) {
+        s.autoResetColWidth = enable
+    }
+}
+
 // OptionEnableStreamWriter enables streaming write via excelize.StreamWriter.
 // When enabled, writers will use StreamWriter to append rows with lower memory usage.
 func OptionEnableStreamWriter(enable bool) Option {

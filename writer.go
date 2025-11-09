@@ -134,9 +134,11 @@ func (s sliceWriter) WriteData(sheetObj *Sheet) error {
 	if err := sheetObj.file.SetCellStyle(sheetObj.SheetName(), GetCellCoord(sheetObj.firstEmptyRow+1, 1), GetCellCoord(sheetObj.rowNum, maxCol), dataStyleID); err != nil {
 		return err
 	}
-	//设置默认列宽
-	//exc.ex.SetColWidth(sheetObj.SheetName(), GetColumnIndex(1), GetColumnIndex(len(sheetObj.SheetHeaders())), 12.0)
-	return AutoResetCellWidth(sheetObj)
+    // column width
+    if sheetObj.autoResetColWidth {
+        return AutoResetCellWidth(sheetObj)
+    }
+    return SetFixedColWidth(sheetObj)
 }
 
 func (s sliceWriter) FieldSort(baseDataType any) []string {
@@ -206,8 +208,11 @@ func (s structWriter) WriteData(sheetObj *Sheet) error {
 	if err = sheetObj.file.SetCellStyle(sheetObj.SheetName(), GetCellCoord(sheetObj.firstEmptyRow, 1), GetCellCoord(sheetObj.firstEmptyRow+1, colLen), dataStyleID); err != nil {
 		return err
 	}
-	//Set the default column width
-	return AutoResetCellWidth(sheetObj)
+    // column width
+    if sheetObj.autoResetColWidth {
+        return AutoResetCellWidth(sheetObj)
+    }
+    return SetFixedColWidth(sheetObj)
 }
 
 func (s structWriter) FieldSort(baseDataType any) []string {

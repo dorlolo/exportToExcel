@@ -61,6 +61,26 @@ func AutoResetCellWidth(sheetObj *Sheet, setLimitWidth ...float64) error {
 	return nil
 }
 
+// SetFixedColWidth sets all columns to a fixed width based on sheet's minColWidth
+// or the provided width parameter.
+func SetFixedColWidth(sheetObj *Sheet, width ...float64) error {
+    fixed := sheetObj.minColWidth
+    if width != nil {
+        fixed = width[0]
+    }
+    columnLen := len(sheetObj.Fields())
+    if columnLen == 0 {
+        columnLen = 1
+    }
+    for col := 1; col <= columnLen; col++ {
+        colChar := GetColumnIndex(col)
+        if err := sheetObj.file.SetColWidth(sheetObj.SheetName(), colChar, colChar, fixed+ComfortColWidth); err != nil {
+            return err
+        }
+    }
+    return nil
+}
+
 // GetCellCoord
 // row and column index numbers are converted to excel coordinates.
 // Note: the initial value of both row and column is 1
