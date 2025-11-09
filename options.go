@@ -17,8 +17,16 @@ func OptionSetDataStyle(styleFn func() *excelize.Style) Option {
     }
 }
 func OptionSetColWidth(min, max float64) Option {
-	return func(s *Sheet) {
-		s.minColWidth = min
-		s.maxColWidth = max
-	}
+    return func(s *Sheet) {
+        s.minColWidth = min
+        s.maxColWidth = max
+    }
+}
+
+// OptionEnableStreamWriter enables streaming write via excelize.StreamWriter.
+// When enabled, writers will use StreamWriter to append rows with lower memory usage.
+func OptionEnableStreamWriter(enable bool) Option {
+    return func(s *Sheet) {
+        s.useStream = enable
+    }
 }

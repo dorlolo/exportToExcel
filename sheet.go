@@ -21,18 +21,21 @@ func newSheet(file *excelize.File, sheetName string, baseDataType any, opts ...O
 }
 
 type Sheet struct {
-	Title         Title
-	fieldSort     []string
-	file          *excelize.File
-	sheetId       int
-	rowNum        int
-	titleStyle    func() *excelize.Style
-	dataStyle     func() *excelize.Style
-	data          any
-	baseDataType  any //the base type of the data, it used to search appropriate writer(IDataWriter.Supported)
-	firstEmptyRow int
-	minColWidth   float64
-	maxColWidth   float64
+    Title         Title
+    fieldSort     []string
+    file          *excelize.File
+    sheetId       int
+    rowNum        int
+    titleStyle    func() *excelize.Style
+    dataStyle     func() *excelize.Style
+    data          any
+    baseDataType  any //the base type of the data, it used to search appropriate writer(IDataWriter.Supported)
+    firstEmptyRow int
+    minColWidth   float64
+    maxColWidth   float64
+    // streaming write support
+    useStream     bool
+    stream        *excelize.StreamWriter
 }
 
 func (s *Sheet) SetSheetName(sheetName string) {
@@ -80,7 +83,7 @@ func (s *Sheet) SetTitleStyle(style func() *excelize.Style) {
 	s.titleStyle = style
 }
 func (s *Sheet) SetDataStyle(style func() *excelize.Style) {
-	s.dataStyle = style
+    s.dataStyle = style
 }
 
 func (s *Sheet) MinColWidth() float64 {
@@ -96,13 +99,39 @@ func (s *Sheet) SetMaxColWidth(maxColWidth float64) {
 }
 
 func (s *Sheet) MaxColWidth() float64 {
-	return s.maxColWidth
+    return s.maxColWidth
 }
 
 // The data is written to the table in the order of these fields
 func (s *Sheet) Fields(recalculate ...bool) []string {
-	if (s.fieldSort == nil && s.baseDataType != nil) || (len(recalculate) == 1 && recalculate[0] == true) {
-		return writers.FieldSort(s)
-	}
-	return s.fieldSort
+    if (s.fieldSort == nil && s.baseDataType != nil) || (len(recalculate) == 1 && recalculate[0] == true) {
+        return writers.FieldSort(s)
+    }
+    return s.fieldSort
+}
+
+// BeginStream initializes a StreamWriter for the current sheet when streaming is enabled.
+func (s *Sheet) BeginStream() error {
+    if !s.useStream {
+        return nil
+    }
+    if s.stream != nil {
+        return nil
+    }
+    sw, err := s.file.NewStreamWriter(s.SheetName())
+    if err != nil {
+        return err
+    }
+    s.stream = sw
+    return nil
+}
+
+// EndStream flushes and clears the StreamWriter.
+func (s *Sheet) EndStream() error {
+    if s.stream == nil {
+        return nil
+    }
+    err := s.stream.Flush()
+    s.stream = nil
+    return err
 }
