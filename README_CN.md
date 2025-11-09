@@ -217,3 +217,30 @@ if err := ex.Save(); err != nil {
 说明：
 - API 用法保持不变，仅写入路径切换为流式方式。
 - 写入完成后仍会应用数据样式与列宽自适应。
+
+### 关闭自适应列宽并使用固定宽度
+
+在大数据量导出时，自适应列宽（逐格读取内容估算宽度）会带来明显的性能开销。可以通过关闭自适应列宽并设置固定宽度来降低计算量。
+
+```go
+ex := exportToExcel.NewExcel(".", "stream.xlsx")
+st := ex.NewSheet(
+    "sheet1",
+    DemoBaseDataTypeA{},
+    exportToExcel.OptionEnableStreamWriter(true),   // 开启流式写入（可选）
+    exportToExcel.OptionAutoResetColWidth(false),   // 关闭列宽自适应
+    exportToExcel.OptionSetColWidth(10, 10),        // 设置固定宽度基线
+)
+
+data := []DemoBaseDataTypeA{{"Alice", 30, 180}, {"Bob", 25, 175}}
+if err := st.FillData(data); err != nil {
+    panic(err)
+}
+if err := ex.Save(); err != nil {
+    panic(err)
+}
+```
+
+说明：
+- 关闭自适应后，各列将按固定宽度设置一次；`OptionSetColWidth(min, max)` 的 `min` 作为有效宽度。
+- 如需更宽或更窄，可调整 `min`，以兼顾视觉效果与导出性能。

@@ -240,3 +240,30 @@ if err := ex.Save(); err != nil {
 Notes:
 - API remains the same; only the write path changes to streaming.
 - Data styles and auto column width are still applied after writing.
+
+### Disable Auto-Fit Column Width and Use Fixed Width
+
+For large exports, auto-fit column width (scanning cell contents) can be expensive. You can disable auto-fit and apply a fixed width to reduce computation.
+
+```go
+ex := exportToExcel.NewExcel(".", "stream.xlsx")
+st := ex.NewSheet(
+    "sheet1",
+    DemoBaseDataTypeA{},
+    exportToExcel.OptionEnableStreamWriter(true),  // optional: enable streaming write
+    exportToExcel.OptionAutoResetColWidth(false),  // disable auto-fit width
+    exportToExcel.OptionSetColWidth(10, 10),       // set fixed width baseline
+)
+
+data := []DemoBaseDataTypeA{{"Alice", 30, 180}, {"Bob", 25, 175}}
+if err := st.FillData(data); err != nil {
+    panic(err)
+}
+if err := ex.Save(); err != nil {
+    panic(err)
+}
+```
+
+Notes:
+- When auto-fit is disabled, columns are set once with a fixed width; `OptionSetColWidth(min, max)` uses `min` as the effective width.
+- Adjust `min` as needed to balance visual comfort and export performance.
