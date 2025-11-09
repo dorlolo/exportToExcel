@@ -17,19 +17,19 @@ func TestNewExcel(t *testing.T) {
 }
 
 func TestNewExcelFromTemplate(t *testing.T) {
-	ex, err := NewExcelFromTemplate("./example/template.xlsx", "./example", "exprot.xlsx")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if err = ex.Save(); err != nil {
-		t.Error(err)
-		return
-	}
-	_, err = os.Stat("./test/template.xlsx")
-	if err != nil {
-		t.Error(err)
-	}
+    ex, err := NewExcelFromTemplate("./example/template.xlsx", "./example", "exprot.xlsx")
+    if err != nil {
+        t.Error(err)
+        return
+    }
+    if err = ex.Save(); err != nil {
+        t.Error(err)
+        return
+    }
+    _, err = os.Stat("./example/exprot.xlsx")
+    if err != nil {
+        t.Error(err)
+    }
 }
 
 type demoData struct {

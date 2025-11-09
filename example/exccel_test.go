@@ -76,16 +76,21 @@ func TestNewExcelAndFillData(t *testing.T) {
 }
 
 func TestReadExcelFromTemplateFile(t *testing.T) {
-	ex, err := exportToExcel.NewExcelFromTemplate("./template.xlsx", ".", "newfile.xlsx")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	st := ex.GetSheetByName("Sheet1")
-	if st == nil {
-		t.Error("can not file sheet:Sheet1")
-		return
-	}
+    ex, err := exportToExcel.NewExcelFromTemplate("./template.xlsx", ".", "newfile.xlsx")
+    if err != nil {
+        t.Error(err)
+        return
+    }
+    names := ex.File().GetSheetList()
+    if len(names) == 0 {
+        t.Error("no sheets in template file")
+        return
+    }
+    st := ex.GetSheetByName(names[0])
+    if st == nil {
+        t.Errorf("can not find sheet: %s", names[0])
+        return
+    }
 	st.SetDataType(DemoBaseDataTypeA{})
 	var data1 = []DemoBaseDataTypeA{
 		{"Mr.Zhang", 16, 180},

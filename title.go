@@ -154,8 +154,8 @@ func (t *TitleItem) SetMergeColTo(colTo int) *TitleItem {
 
 // SetMergeRowTo
 func (t *TitleItem) SetMergeRowTo(colTo int) *TitleItem {
-	t.MergeColTo = colTo
-	return t
+    t.MergeRowTo = colTo
+    return t
 }
 
 // SetMergeRowTo

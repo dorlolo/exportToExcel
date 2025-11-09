@@ -45,8 +45,8 @@ func TestLockCellExample(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = exf.Save()
-	if err != nil {
-		t.Error(err)
-	}
+    err = ex.Save()
+    if err != nil {
+        t.Error(err)
+    }
 }

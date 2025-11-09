@@ -12,9 +12,9 @@ func OptionSetTitleStyle(styleFn func() *excelize.Style) Option {
 	}
 }
 func OptionSetDataStyle(styleFn func() *excelize.Style) Option {
-	return func(s *Sheet) {
-		s.titleStyle = styleFn
-	}
+    return func(s *Sheet) {
+        s.dataStyle = styleFn
+    }
 }
 func OptionSetColWidth(min, max float64) Option {
 	return func(s *Sheet) {
