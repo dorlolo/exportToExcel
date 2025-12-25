@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/dorlolo/exportToExcel"
 	"testing"
+
+	"github.com/dorlolo/exportToExcel"
 )
 
 type DemoBaseDataTypeA struct {
@@ -76,21 +77,21 @@ func TestNewExcelAndFillData(t *testing.T) {
 }
 
 func TestReadExcelFromTemplateFile(t *testing.T) {
-    ex, err := exportToExcel.NewExcelFromTemplate("./template.xlsx", ".", "newfile.xlsx")
-    if err != nil {
-        t.Error(err)
-        return
-    }
-    names := ex.File().GetSheetList()
-    if len(names) == 0 {
-        t.Error("no sheets in template file")
-        return
-    }
-    st := ex.GetSheetByName(names[0])
-    if st == nil {
-        t.Errorf("can not find sheet: %s", names[0])
-        return
-    }
+	ex, err := exportToExcel.NewExcelFromTemplate("./template.xlsx", ".", "newfile.xlsx")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	names := ex.File().GetSheetList()
+	if len(names) == 0 {
+		t.Error("no sheets in template file")
+		return
+	}
+	st := ex.GetSheetByName(names[0])
+	if st == nil {
+		t.Errorf("can not find sheet: %s", names[0])
+		return
+	}
 	st.SetDataType(DemoBaseDataTypeA{})
 	var data1 = []DemoBaseDataTypeA{
 		{"Mr.Zhang", 16, 180},
@@ -112,6 +113,45 @@ func TestReadExcelFromTemplateFile(t *testing.T) {
 
 	if err = ex.Save(); err != nil {
 		t.Error(err)
+		return
+	}
+}
+
+func TestDataStyleWhenUseFieldSort(t *testing.T) {
+	var err error
+	ex := exportToExcel.NewExcel(".", "styleTest_fieldSort.xlsx")
+	defer func() {
+		if err == nil {
+			if err = ex.Save(); err != nil {
+				fmt.Println("save file failed:", err)
+				return
+			}
+		}
+	}()
+	// generate sheet-1,just use two fields to fill slice data
+	st1 := ex.NewSheet("st1", DemoBaseDataTypeA{})
+	st1.SetFieldSort([]string{"age", "name"})
+	err = st1.Title.Gen(
+		st1.Title.NewTitleItem(4, "st1-demo", 1, 1).SetFullHorizontalMerge(),
+		st1.Title.NewTitleItem(5, "age", 2, 2),
+		st1.Title.NewTitleItem(5, "name", 2, 1),
+	)
+	if err != nil {
+		fmt.Println("generate title failed:", err.Error())
+		return
+	}
+	var data = []DemoBaseDataTypeA{
+		{"Mr.A", 1, 11},
+		{"Mrs.B", 2, 22},
+		{"Mrs.C", 3, 33},
+		{"Mrs.D", 4, 55},
+		{"Mrs.E", 5, 55},
+		{"Mrs.F", 6, 66},
+		{"Mrs.G", 7, 77},
+	}
+	err = st1.FillData(data)
+	if err != nil {
+		fmt.Println("fill data1_1 err:", err)
 		return
 	}
 }

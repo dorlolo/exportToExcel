@@ -7,9 +7,10 @@
 package exportToExcel
 
 import (
-    "errors"
-    "github.com/xuri/excelize/v2"
-    "reflect"
+	"errors"
+	"reflect"
+
+	"github.com/xuri/excelize/v2"
 )
 
 var writers writerList
@@ -79,51 +80,56 @@ func (s sliceWriter) Supported(data any) bool {
 
 // , SheetData reflect.Value, SheetDataType reflect.Type, firstRow int
 func (s sliceWriter) WriteData(sheetObj *Sheet) error {
-    var cellNameList = sheetObj.Fields()
-    var refValue = reflect.ValueOf(sheetObj.Data())
-    var refType = reflect.TypeOf(sheetObj.baseDataType)
-    var columnLen = refType.NumField()
-    dataRowLen := refValue.Len()
-    if sheetObj.useStream {
-        if err := sheetObj.BeginStream(); err != nil {
-            return err
-        }
-        // stream rows
-        for rowIndex := 0; rowIndex < dataRowLen; rowIndex++ {
-            var dataMap = s.dataToMap(refValue.Index(rowIndex), refType)
-            rowVals := make([]interface{}, len(cellNameList))
-            for column, v := range cellNameList {
-                rowVals[column] = dataMap[v]
-            }
-            axis := GetCellCoord(sheetObj.firstEmptyRow+rowIndex+1, 1)
-            if err := sheetObj.stream.SetRow(axis, rowVals, excelize.RowOpts{}); err != nil {
-                _ = sheetObj.EndStream()
-                return err
-            }
-        }
-        if err := sheetObj.EndStream(); err != nil {
-            return err
-        }
-    } else {
-        for rowIndex := 0; rowIndex < dataRowLen; rowIndex++ {
-            var dataMap = s.dataToMap(refValue.Index(rowIndex), refType)
-            for i := 0; i < columnLen-1; i++ {
-                for column, v := range cellNameList {
-                    var axis = GetCellCoord(sheetObj.firstEmptyRow+rowIndex+1, column+1)
-                    err := sheetObj.file.SetCellValue(sheetObj.SheetName(), axis, dataMap[v])
-                    if err != nil {
-                        return err
-                    }
-                }
-            }
-        }
-    }
+	var cellNameList = sheetObj.Fields()
+	var refValue = reflect.ValueOf(sheetObj.Data())
+	var refType = reflect.TypeOf(sheetObj.baseDataType)
+	var columnLen = refType.NumField()
+	dataRowLen := refValue.Len()
+	if sheetObj.useStream {
+		if err := sheetObj.BeginStream(); err != nil {
+			return err
+		}
+		// stream rows
+		for rowIndex := 0; rowIndex < dataRowLen; rowIndex++ {
+			var dataMap = s.dataToMap(refValue.Index(rowIndex), refType)
+			rowVals := make([]interface{}, len(cellNameList))
+			for column, v := range cellNameList {
+				rowVals[column] = dataMap[v]
+			}
+			axis := GetCellCoord(sheetObj.firstEmptyRow+rowIndex+1, 1)
+			if err := sheetObj.stream.SetRow(axis, rowVals, excelize.RowOpts{}); err != nil {
+				_ = sheetObj.EndStream()
+				return err
+			}
+		}
+		if err := sheetObj.EndStream(); err != nil {
+			return err
+		}
+	} else {
+		for rowIndex := 0; rowIndex < dataRowLen; rowIndex++ {
+			var dataMap = s.dataToMap(refValue.Index(rowIndex), refType)
+			for i := 0; i < columnLen-1; i++ {
+				for column, v := range cellNameList {
+					var axis = GetCellCoord(sheetObj.firstEmptyRow+rowIndex+1, column+1)
+					err := sheetObj.file.SetCellValue(sheetObj.SheetName(), axis, dataMap[v])
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
 	//set sheet style
 	dataStyleID, errs := sheetObj.file.NewStyle(sheetObj.dataStyle())
 	if errs != nil {
 		return errs
 	}
-	maxCol := columnLen
+	var maxCol int
+	if len(sheetObj.fieldSort) > 0 {
+		maxCol = len(sheetObj.fieldSort)
+	} else {
+		maxCol = columnLen
+	}
 	titleLen := sheetObj.Title.colNum
 	if titleLen > maxCol {
 		maxCol = titleLen
@@ -134,11 +140,11 @@ func (s sliceWriter) WriteData(sheetObj *Sheet) error {
 	if err := sheetObj.file.SetCellStyle(sheetObj.SheetName(), GetCellCoord(sheetObj.firstEmptyRow+1, 1), GetCellCoord(sheetObj.rowNum, maxCol), dataStyleID); err != nil {
 		return err
 	}
-    // column width
-    if sheetObj.autoResetColWidth {
-        return AutoResetCellWidth(sheetObj)
-    }
-    return SetFixedColWidth(sheetObj)
+	// column width
+	if sheetObj.autoResetColWidth {
+		return AutoResetCellWidth(sheetObj)
+	}
+	return SetFixedColWidth(sheetObj)
 }
 
 func (s sliceWriter) FieldSort(baseDataType any) []string {
@@ -167,34 +173,34 @@ func (s structWriter) Supported(data any) bool {
 }
 
 func (s structWriter) WriteData(sheetObj *Sheet) error {
-    var dataType = reflect.TypeOf(sheetObj.baseDataType)
-    var dataValue = reflect.ValueOf(sheetObj.Data())
-    var dataMap = DataToMapByJsonTag(dataValue, dataType)
-    if sheetObj.useStream {
-        if err := sheetObj.BeginStream(); err != nil {
-            return err
-        }
-        rowVals := make([]interface{}, len(sheetObj.Fields()))
-        for column, v := range sheetObj.Fields() {
-            rowVals[column] = dataMap[v]
-        }
-        axis := GetCellCoord(sheetObj.firstEmptyRow+1, 1)
-        if err := sheetObj.stream.SetRow(axis, rowVals, excelize.RowOpts{}); err != nil {
-            _ = sheetObj.EndStream()
-            return err
-        }
-        if err := sheetObj.EndStream(); err != nil {
-            return err
-        }
-    } else {
-        for column, v := range sheetObj.Fields() {
-            var axis = GetCellCoord(sheetObj.firstEmptyRow+1, column+1)
-            err := sheetObj.file.SetCellValue(sheetObj.SheetName(), axis, dataMap[v])
-            if err != nil {
-                return err
-            }
-        }
-    }
+	var dataType = reflect.TypeOf(sheetObj.baseDataType)
+	var dataValue = reflect.ValueOf(sheetObj.Data())
+	var dataMap = DataToMapByJsonTag(dataValue, dataType)
+	if sheetObj.useStream {
+		if err := sheetObj.BeginStream(); err != nil {
+			return err
+		}
+		rowVals := make([]interface{}, len(sheetObj.Fields()))
+		for column, v := range sheetObj.Fields() {
+			rowVals[column] = dataMap[v]
+		}
+		axis := GetCellCoord(sheetObj.firstEmptyRow+1, 1)
+		if err := sheetObj.stream.SetRow(axis, rowVals, excelize.RowOpts{}); err != nil {
+			_ = sheetObj.EndStream()
+			return err
+		}
+		if err := sheetObj.EndStream(); err != nil {
+			return err
+		}
+	} else {
+		for column, v := range sheetObj.Fields() {
+			var axis = GetCellCoord(sheetObj.firstEmptyRow+1, column+1)
+			err := sheetObj.file.SetCellValue(sheetObj.SheetName(), axis, dataMap[v])
+			if err != nil {
+				return err
+			}
+		}
+	}
 	//register data style
 	dataStyleID, err := sheetObj.file.NewStyle(sheetObj.dataStyle())
 	if err != nil {
@@ -208,11 +214,11 @@ func (s structWriter) WriteData(sheetObj *Sheet) error {
 	if err = sheetObj.file.SetCellStyle(sheetObj.SheetName(), GetCellCoord(sheetObj.firstEmptyRow, 1), GetCellCoord(sheetObj.firstEmptyRow+1, colLen), dataStyleID); err != nil {
 		return err
 	}
-    // column width
-    if sheetObj.autoResetColWidth {
-        return AutoResetCellWidth(sheetObj)
-    }
-    return SetFixedColWidth(sheetObj)
+	// column width
+	if sheetObj.autoResetColWidth {
+		return AutoResetCellWidth(sheetObj)
+	}
+	return SetFixedColWidth(sheetObj)
 }
 
 func (s structWriter) FieldSort(baseDataType any) []string {
